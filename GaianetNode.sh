@@ -95,7 +95,8 @@ import time
 from faker import Faker
 from datetime import datetime
 
-node_url = "https://ВАШ_Subdomain/v1/chat/completions"
+subdomain = input("Введите ваш Subdomain для node_url (например, 0x3e74255d...): ")
+node_url = f"https://{subdomain}/v1/chat/completions"
 
 faker = Faker()
 
