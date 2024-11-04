@@ -132,8 +132,11 @@ def send_message(node_url, message):
     try:
         response = requests.post(node_url, json=message, headers=headers)
         response.raise_for_status()
+        logging.info(f"Sent message to {node_url}: {message}")
+        logging.info(f"Received response: {response.json()}")
         return response.json()
     except requests.exceptions.RequestException as e:
+        logging.error(f"Failed to get response from API: {e}")
         print(f"Failed to get response from API: {e}")
         return None
 
