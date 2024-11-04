@@ -13,6 +13,13 @@ if ! command -v curl &> /dev/null; then
     sudo apt update
     sudo apt install curl -y
 fi
+
+# Проверка наличия jq и установка, если не установлен
+if ! command -v jq &> /dev/null; then
+    sudo apt update
+    sudo apt install jq -y
+fi
+
 sleep 1
 
 echo -e "${GREEN}"
@@ -83,9 +90,11 @@ function view_node_info {
 }
 
 function change_port {
+    current_port=$(jq -r '.llamaedge_port' /root/gaianet/config.json)
+    echo -e "${YELLOW}Текущий порт: ${current_port}${NC}"
     echo -e "${YELLOW}Введите новый порт:${NC}"
     read new_port
-    sed -i "s/"port":\s*\d\+/"port": ${new_port}/" /root/gaianet/config.json
+    jq ".llamaedge_port = \"${new_port}\"" /root/gaianet/config.json > /root/gaianet/config_tmp.json && mv /root/gaianet/config_tmp.json /root/gaianet/config.json
     echo -e "${BLUE}Перезапускаем ноду с новым портом...${NC}"
     restart_node
 }
