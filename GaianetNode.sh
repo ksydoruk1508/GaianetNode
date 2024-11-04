@@ -39,16 +39,16 @@ function install_node {
     sudo apt-get update -y && sudo apt upgrade -y && sudo apt install -y python3-pip nano
 
     echo -e "${BLUE}Загружаем и выполняем скрипт установки ноды Gaianet...${NC}"
-    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash && echo 'export PATH=\$PATH:/root/gaianet/bin' >> ~/.bashrc && source ~/.bashrc
+    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash && echo 'export PATH=$PATH:/root/gaianet/bin' >> ~/.bashrc && source ~/.bashrc
 
     echo -e "${BLUE}Настраиваем конфигурацию Bash...${NC}"
-    source ~/.bashrc
+    export PATH=$PATH:/root/gaianet/bin
 
     echo -e "${BLUE}Инициализируем GaiaNet с конфигурацией...${NC}"
-    gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
+    /root/gaianet/bin/gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
 
     echo -e "${BLUE}Запускаем ноду в фоновом режиме...${NC}"
-    nohup gaianet start > gaianet_node.log 2>&1 &
+    nohup /root/gaianet/bin/gaianet start > gaianet_node.log 2>&1 &
     echo -e "${GREEN}Нода Gaianet успешно установлена и запущена в фоновом режиме.${NC}"
 
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
@@ -63,22 +63,22 @@ function view_logs {
 
 function remove_node {
     echo -e "${BLUE}Удаляем ноду Gaianet...${NC}"
-    pkill -f "gaianet start"
+    pkill -f "/root/gaianet/bin/gaianet start"
     sudo rm -rf /root/gaianet
     echo -e "${GREEN}Нода Gaianet успешно удалена.${NC}"
 }
 
 function restart_node {
     echo -e "${BLUE}Перезапускаем ноду Gaianet...${NC}"
-    pkill -f "gaianet start"
+    pkill -f "/root/gaianet/bin/gaianet start"
     echo -e "${BLUE}Запускаем ноду в фоновом режиме...${NC}"
-    nohup gaianet start > gaianet_node.log 2>&1 &
+    nohup /root/gaianet/bin/gaianet start > gaianet_node.log 2>&1 &
     echo -e "${GREEN}Нода Gaianet успешно перезапущена.${NC}"
 }
 
 function view_node_info {
     echo -e "${YELLOW}Просмотр Node id и Device id...${NC}"
-    gaianet info
+    /root/gaianet/bin/gaianet info
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
 }
 
@@ -142,8 +142,7 @@ while True:
     
     log_message("Node replied", f"Q ({question_time}): {random_question} A ({reply_time}): {reply}")
     
-    print(f"Q ({question_time}): {random_question}
-A ({reply_time}): {reply}")
+    print(f"Q ({question_time}): {random_question}\nA ({reply_time}): {reply}")
     
     delay = random.randint(60, 180)
     time.sleep(delay)
@@ -203,9 +202,6 @@ function main_menu {
             5) view_node_info ;;
             6) setup_ai_chat_automation ;;
             7) setup_auto_restart ;;
-            2) view_logs ;;
-            3) remove_node ;;
-            4) restart_node ;;
             8) break ;;
             *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
         esac
