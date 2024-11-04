@@ -208,4 +208,25 @@ function main_menu {
         echo -e "${CYAN}4. Перезапуск ноды${NC}"
         echo -e "${CYAN}5. Просмотр Node id и Device id${NC}"
         echo -e "${CYAN}6. Изменить порт${NC}"
-        echo -e "${CYAN}7.
+        echo -e "${CYAN}7. Установка автоматизации общения с AI ботом${NC}"
+        echo -e "${CYAN}8. Установка автоматического перезапуска ноды при падении${NC}"
+        echo -e "${CYAN}9. Выход${NC}"
+       
+        echo -e "${YELLOW}Введите номер:${NC} "
+        read choice
+        case $choice in
+            1) install_node ;;
+            2) view_logs ;;
+            3) remove_node ;;
+            4) restart_node ;;
+            5) view_node_info ;;
+            6) change_port ;;
+            7) setup_ai_chat_automation ;;
+            8) setup_auto_restart ;;
+            9) break ;;
+            *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
+        esac
+    done
+}
+
+main_menu
