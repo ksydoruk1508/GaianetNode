@@ -111,10 +111,8 @@ import logging
 import time
 from faker import Faker
 from datetime import datetime
-import sys
 
-subdomain = sys.argv[1]
-node_url = f"https://{subdomain}/v1/chat/completions"
+node_url = "https://0xf7be6f3fde6b1b629c887620d8ba8c51ab2dfcff.us.gaianet.network/v1/chat/completions"
 
 faker = Faker()
 
@@ -170,9 +168,7 @@ while True:
 EOF
 
     echo -e "${GREEN}Скрипт для автоматизации общения создан.${NC}"
-    echo -e "${YELLOW}Введите ваш Subdomain для node_url (например, 0x3e74255d...):${NC}"
-    read subdomain
-    nohup python3 ~/random_chat_with_faker.py ${subdomain} > chat_automation.log 2>&1 &
+    nohup python3 ~/random_chat_with_faker.py > chat_automation.log 2>&1 &
     echo -e "${GREEN}Автоматизация общения с AI ботом запущена.${NC}"
 }
 
@@ -212,25 +208,4 @@ function main_menu {
         echo -e "${CYAN}4. Перезапуск ноды${NC}"
         echo -e "${CYAN}5. Просмотр Node id и Device id${NC}"
         echo -e "${CYAN}6. Изменить порт${NC}"
-        echo -e "${CYAN}7. Установка автоматизации общения с AI ботом${NC}"
-        echo -e "${CYAN}8. Установка автоматического перезапуска ноды при падении${NC}"
-        echo -e "${CYAN}9. Выход${NC}"
-       
-        echo -e "${YELLOW}Введите номер:${NC} "
-        read choice
-        case $choice in
-            1) install_node ;;
-            2) view_logs ;;
-            3) remove_node ;;
-            4) restart_node ;;
-            5) view_node_info ;;
-            6) change_port ;;
-            7) setup_ai_chat_automation ;;
-            8) setup_auto_restart ;;
-            9) break ;;
-            *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
-        esac
-    done
-}
-
-main_menu
+        echo -e "${CYAN}7.
