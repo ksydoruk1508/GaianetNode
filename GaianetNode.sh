@@ -165,7 +165,9 @@ while True:
     time.sleep(delay)
 EOF
 
-    echo -e "${GREEN}Скрипт для автоматизации общения создан. Запускаем его в фоновом режиме...${NC}"
+    echo -e "${GREEN}Скрипт для автоматизации общения создан.${NC}"
+    echo -e "${YELLOW}Введите ваш Subdomain для node_url (например, 0x3e74255d...):${NC}"
+    read subdomain
     nohup python3 ~/random_chat_with_faker.py > chat_automation.log 2>&1 &
     echo -e "${GREEN}Автоматизация общения с AI ботом запущена.${NC}"
 }
