@@ -82,6 +82,17 @@ function view_node_info {
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
 }
 
+function change_port {
+    echo -e "${YELLOW}Текущий порт, используемый нодой...${NC}"
+    current_port=$(grep -oP '"port":\s*\K\d+' /root/gaianet/config.json)
+    echo -e "${CYAN}Текущий порт: ${current_port}${NC}"
+    echo -e "${YELLOW}Введите новый порт:${NC}"
+    read new_port
+    sed -i "s/"port":\s*${current_port}/"port": ${new_port}/" /root/gaianet/config.json
+    echo -e "${BLUE}Перезапускаем ноду с новым портом...${NC}"
+    restart_node
+}
+
 function setup_ai_chat_automation {
     echo -e "${BLUE}Устанавливаем необходимые библиотеки для автоматизации общения с AI ботом...${NC}"
     pip install requests faker
@@ -188,9 +199,10 @@ function main_menu {
         echo -e "${CYAN}3. Удаление ноды${NC}"
         echo -e "${CYAN}4. Перезапуск ноды${NC}"
         echo -e "${CYAN}5. Просмотр Node id и Device id${NC}"
-        echo -e "${CYAN}6. Установка автоматизации общения с AI ботом${NC}"
-        echo -e "${CYAN}7. Установка автоматического перезапуска ноды при падении${NC}"
-        echo -e "${CYAN}8. Выход${NC}"
+        echo -e "${CYAN}6. Изменить порт${NC}"
+        echo -e "${CYAN}7. Установка автоматизации общения с AI ботом${NC}"
+        echo -e "${CYAN}8. Установка автоматического перезапуска ноды при падении${NC}"
+        echo -e "${CYAN}9. Выход${NC}"
        
         echo -e "${YELLOW}Введите номер:${NC} "
         read choice
@@ -200,9 +212,10 @@ function main_menu {
             3) remove_node ;;
             4) restart_node ;;
             5) view_node_info ;;
-            6) setup_ai_chat_automation ;;
-            7) setup_auto_restart ;;
-            8) break ;;
+            6) change_port ;;
+            7) setup_ai_chat_automation ;;
+            8) setup_auto_restart ;;
+            9) break ;;
             *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
         esac
     done
