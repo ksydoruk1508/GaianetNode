@@ -84,13 +84,17 @@ function view_node_info {
 
 function change_port {
     echo -e "${YELLOW}Текущий порт, используемый нодой...${NC}"
-    current_port=$(grep -oP '"port":\s*\K\d+' /root/gaianet/config.json)
-    echo -e "${CYAN}Текущий порт: ${current_port}${NC}"
-    echo -e "${YELLOW}Введите новый порт:${NC}"
-    read new_port
-    sed -i "s/"port":\s*${current_port}/"port": ${new_port}/" /root/gaianet/config.json
-    echo -e "${BLUE}Перезапускаем ноду с новым портом...${NC}"
-    restart_node
+    current_port=$(grep -oP '"port":\s*\K\d+' /root/gaianet/config.json || echo "не найден")
+    if [ "$current_port" == "не найден" ]; then
+        echo -e "${RED}Не удалось найти текущий порт в конфигурационном файле.${NC}"
+    else
+        echo -e "${CYAN}Текущий порт: ${current_port}${NC}"
+        echo -e "${YELLOW}Введите новый порт:${NC}"
+        read new_port
+        sed -i "s/"port":\s*${current_port}/"port": ${new_port}/" /root/gaianet/config.json
+        echo -e "${BLUE}Перезапускаем ноду с новым портом...${NC}"
+        restart_node
+    fi
 }
 
 function setup_ai_chat_automation {
