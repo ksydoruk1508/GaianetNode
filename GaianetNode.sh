@@ -39,7 +39,7 @@ function install_node {
     sudo apt-get update -y && sudo apt upgrade -y && sudo apt install -y python3-pip nano
 
     echo -e "${BLUE}Загружаем и выполняем скрипт установки ноды Gaianet...${NC}"
-    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash && export PATH=$PATH:/root/gaianet/bin
+    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash && echo 'export PATH=\$PATH:/root/gaianet/bin' >> ~/.bashrc && source ~/.bashrc
 
     echo -e "${BLUE}Настраиваем конфигурацию Bash...${NC}"
     source ~/.bashrc
@@ -76,6 +76,110 @@ function restart_node {
     echo -e "${GREEN}Нода Gaianet успешно перезапущена.${NC}"
 }
 
+function view_node_info {
+    echo -e "${YELLOW}Просмотр Node id и Device id...${NC}"
+    gaianet info
+    echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
+}
+
+function setup_ai_chat_automation {
+    echo -e "${BLUE}Устанавливаем необходимые библиотеки для автоматизации общения с AI ботом...${NC}"
+    pip install requests faker
+
+    echo -e "${BLUE}Создаем скрипт для автоматизации общения...${NC}"
+    cat << EOF > ~/random_chat_with_faker.py
+import requests
+import random
+import logging
+import time
+from faker import Faker
+from datetime import datetime
+
+node_url = "https://ВАШ_Subdomain/v1/chat/completions"
+
+faker = Faker()
+
+headers = {
+    "accept": "application/json",
+    "Content-Type": "application/json"
+}
+
+logging.basicConfig(filename='chat_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
+
+def log_message(node, message):
+    logging.info(f"{node}: {message}")
+
+def send_message(node_url, message):
+    try:
+        response = requests.post(node_url, json=message, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to get response from API: {e}")
+        return None
+
+def extract_reply(response):
+    if response and 'choices' in response:
+        return response['choices'][0]['message']['content']
+    return ""
+
+while True:
+    random_question = faker.sentence(nb_words=10)
+    message = {
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": random_question}
+        ]
+    }
+    
+    question_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    response = send_message(node_url, message)
+    reply = extract_reply(response)
+    
+    reply_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    log_message("Node replied", f"Q ({question_time}): {random_question} A ({reply_time}): {reply}")
+    
+    print(f"Q ({question_time}): {random_question}
+A ({reply_time}): {reply}")
+    
+    delay = random.randint(60, 180)
+    time.sleep(delay)
+EOF
+
+    echo -e "${GREEN}Скрипт для автоматизации общения создан. Запускаем его в фоновом режиме...${NC}"
+    nohup python3 ~/random_chat_with_faker.py > chat_automation.log 2>&1 &
+    echo -e "${GREEN}Автоматизация общения с AI ботом запущена.${NC}"
+}
+
+function setup_auto_restart {
+    echo -e "${BLUE}Создаем сервис для автоматического перезапуска ноды...${NC}"
+    sudo tee /etc/systemd/system/gaianet.service > /dev/null <<EOF
+[Unit]
+Description=Gaianet Node Service
+After=network.target
+
+[Service]
+Type=forking
+RemainAfterExit=true
+ExecStart=/root/gaianet/bin/gaianet start
+ExecStop=/root/gaianet/bin/gaianet stop
+ExecStopPost=/bin/sleep 20
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable gaianet.service
+    sudo systemctl restart gaianet.service
+    echo -e "${GREEN}Сервис для автоматического перезапуска ноды создан и запущен.${NC}"
+}
+
 function main_menu {
     while true; do
         echo -e "${YELLOW}Выберите действие:${NC}"
@@ -83,7 +187,10 @@ function main_menu {
         echo -e "${CYAN}2. Просмотр логов${NC}"
         echo -e "${CYAN}3. Удаление ноды${NC}"
         echo -e "${CYAN}4. Перезапуск ноды${NC}"
-        echo -e "${CYAN}5. Выход${NC}"
+        echo -e "${CYAN}5. Просмотр Node id и Device id${NC}"
+        echo -e "${CYAN}6. Установка автоматизации общения с AI ботом${NC}"
+        echo -e "${CYAN}7. Установка автоматического перезапуска ноды при падении${NC}"
+        echo -e "${CYAN}8. Выход${NC}"
        
         echo -e "${YELLOW}Введите номер:${NC} "
         read choice
@@ -92,7 +199,13 @@ function main_menu {
             2) view_logs ;;
             3) remove_node ;;
             4) restart_node ;;
-            5) break ;;
+            5) view_node_info ;;
+            6) setup_ai_chat_automation ;;
+            7) setup_auto_restart ;;
+            2) view_logs ;;
+            3) remove_node ;;
+            4) restart_node ;;
+            8) break ;;
             *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
         esac
     done
