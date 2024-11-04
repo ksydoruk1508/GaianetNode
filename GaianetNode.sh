@@ -39,7 +39,7 @@ function install_node {
     sudo apt-get update -y && sudo apt upgrade -y && sudo apt install -y python3-pip nano
 
     echo -e "${BLUE}Загружаем и выполняем скрипт установки ноды Gaianet...${NC}"
-    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash
+    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash && export PATH=$PATH:/root/gaianet/bin
 
     echo -e "${BLUE}Настраиваем конфигурацию Bash...${NC}"
     source ~/.bashrc
