@@ -111,8 +111,9 @@ import logging
 import time
 from faker import Faker
 from datetime import datetime
+import sys
 
-subdomain = input("Введите ваш Subdomain для node_url (например, 0x3e74255d...): ")
+subdomain = sys.argv[1]
 node_url = f"https://{subdomain}/v1/chat/completions"
 
 faker = Faker()
@@ -160,73 +161,4 @@ while True:
     log_message("Node replied", f"Q ({question_time}): {random_question} A ({reply_time}): {reply}")
     
     print(f"Q ({question_time}): {random_question}\nA ({reply_time}): {reply}")
-    
-    delay = random.randint(60, 180)
-    time.sleep(delay)
-EOF
-
-    echo -e "${GREEN}Скрипт для автоматизации общения создан.${NC}"
-    echo -e "${YELLOW}Введите ваш Subdomain для node_url (например, 0x3e74255d...):${NC}"
-    read subdomain
-    nohup python3 ~/random_chat_with_faker.py > chat_automation.log 2>&1 &
-    echo -e "${GREEN}Автоматизация общения с AI ботом запущена.${NC}"
-}
-
-function setup_auto_restart {
-    echo -e "${BLUE}Создаем сервис для автоматического перезапуска ноды...${NC}"
-    sudo tee /etc/systemd/system/gaianet.service > /dev/null <<EOF
-[Unit]
-Description=Gaianet Node Service
-After=network.target
-
-[Service]
-Type=forking
-RemainAfterExit=true
-ExecStart=/root/gaianet/bin/gaianet start
-ExecStop=/root/gaianet/bin/gaianet stop
-ExecStopPost=/bin/sleep 20
-Restart=always
-RestartSec=5
-User=root
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    sudo systemctl daemon-reload
-    sudo systemctl enable gaianet.service
-    sudo systemctl restart gaianet.service
-    echo -e "${GREEN}Сервис для автоматического перезапуска ноды создан и запущен.${NC}"
-}
-
-function main_menu {
-    while true; do
-        echo -e "${YELLOW}Выберите действие:${NC}"
-        echo -e "${CYAN}1. Установка ноды${NC}"
-        echo -e "${CYAN}2. Просмотр логов${NC}"
-        echo -e "${CYAN}3. Удаление ноды${NC}"
-        echo -e "${CYAN}4. Перезапуск ноды${NC}"
-        echo -e "${CYAN}5. Просмотр Node id и Device id${NC}"
-        echo -e "${CYAN}6. Изменить порт${NC}"
-        echo -e "${CYAN}7. Установка автоматизации общения с AI ботом${NC}"
-        echo -e "${CYAN}8. Установка автоматического перезапуска ноды при падении${NC}"
-        echo -e "${CYAN}9. Выход${NC}"
-       
-        echo -e "${YELLOW}Введите номер:${NC} "
-        read choice
-        case $choice in
-            1) install_node ;;
-            2) view_logs ;;
-            3) remove_node ;;
-            4) restart_node ;;
-            5) view_node_info ;;
-            6) change_port ;;
-            7) setup_ai_chat_automation ;;
-            8) setup_auto_restart ;;
-            9) break ;;
-            *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
-        esac
-    done
-}
-
-main_menu
+   
