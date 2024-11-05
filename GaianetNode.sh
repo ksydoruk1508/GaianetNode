@@ -13,13 +13,6 @@ if ! command -v curl &> /dev/null; then
     sudo apt update
     sudo apt install curl -y
 fi
-
-# Проверка наличия jq и установка, если не установлен
-if ! command -v jq &> /dev/null; then
-    sudo apt update
-    sudo apt install jq -y
-fi
-
 sleep 1
 
 echo -e "${GREEN}"
@@ -46,16 +39,16 @@ function install_node {
     sudo apt-get update -y && sudo apt upgrade -y && sudo apt install -y python3-pip nano
 
     echo -e "${BLUE}Загружаем и выполняем скрипт установки ноды Gaianet...${NC}"
-    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash && echo 'export PATH=$PATH:/root/gaianet/bin' >> ~/.bashrc && source ~/.bashrc
+    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash && echo 'export PATH=$PATH:/root/gaianet/bin' >> ~/.bashrc && source ~/.bashrc && export PATH=$PATH:/root/gaianet/bin
 
     echo -e "${BLUE}Настраиваем конфигурацию Bash...${NC}"
-    export PATH=$PATH:/root/gaianet/bin
+    source ~/.bashrc
 
     echo -e "${BLUE}Инициализируем GaiaNet с конфигурацией...${NC}"
-    /root/gaianet/bin/gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
+    gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
 
     echo -e "${BLUE}Запускаем ноду в фоновом режиме...${NC}"
-    nohup /root/gaianet/bin/gaianet start > gaianet_node.log 2>&1 &
+    nohup gaianet start > gaianet_node.log 2>&1 &
     echo -e "${GREEN}Нода Gaianet успешно установлена и запущена в фоновом режиме.${NC}"
 
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
@@ -70,33 +63,27 @@ function view_logs {
 
 function remove_node {
     echo -e "${BLUE}Удаляем ноду Gaianet...${NC}"
-    pkill -f "/root/gaianet/bin/gaianet start"
+    pkill -f "gaianet start"
+    pkill -f "python3 ~/random_chat_with_faker.py"
     sudo rm -rf /root/gaianet
-    echo -e "${GREEN}Нода Gaianet успешно удалена.${NC}"
+    sudo rm -f ~/random_chat_with_faker.py
+    sudo rm -f /etc/systemd/system/gaianet.service
+    sudo systemctl daemon-reload
+    echo -e "${GREEN}Нода Gaianet и связанные файлы успешно удалены.${NC}"
 }
 
 function restart_node {
     echo -e "${BLUE}Перезапускаем ноду Gaianet...${NC}"
-    pkill -f "/root/gaianet/bin/gaianet start"
+    pkill -f "gaianet start"
     echo -e "${BLUE}Запускаем ноду в фоновом режиме...${NC}"
-    nohup /root/gaianet/bin/gaianet start > gaianet_node.log 2>&1 &
+    nohup gaianet start > gaianet_node.log 2>&1 &
     echo -e "${GREEN}Нода Gaianet успешно перезапущена.${NC}"
 }
 
 function view_node_info {
     echo -e "${YELLOW}Просмотр Node id и Device id...${NC}"
-    /root/gaianet/bin/gaianet info
+    gaianet info
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
-}
-
-function change_port {
-    current_port=$(jq -r '.llamaedge_port' /root/gaianet/config.json)
-    echo -e "${YELLOW}Текущий порт: ${current_port}${NC}"
-    echo -e "${YELLOW}Введите новый порт:${NC}"
-    read new_port
-    jq ".llamaedge_port = \"${new_port}\"" /root/gaianet/config.json > /root/gaianet/config_tmp.json && mv /root/gaianet/config_tmp.json /root/gaianet/config.json
-    echo -e "${BLUE}Перезапускаем ноду с новым портом...${NC}"
-    restart_node
 }
 
 function setup_ai_chat_automation {
@@ -112,7 +99,8 @@ import time
 from faker import Faker
 from datetime import datetime
 
-node_url = "https://0xf7be6f3fde6b1b629c887620d8ba8c51ab2dfcff.us.gaianet.network/v1/chat/completions"
+subdomain = input("Введите ваш Subdomain для node_url (например, 0x3e74255d...): ")
+node_url = f"https://{subdomain}/v1/chat/completions"
 
 faker = Faker()
 
@@ -130,11 +118,8 @@ def send_message(node_url, message):
     try:
         response = requests.post(node_url, json=message, headers=headers)
         response.raise_for_status()
-        logging.info(f"Sent message to {node_url}: {message}")
-        logging.info(f"Received response: {response.json()}")
         return response.json()
     except requests.exceptions.RequestException as e:
-        logging.error(f"Failed to get response from API: {e}")
         print(f"Failed to get response from API: {e}")
         return None
 
@@ -167,7 +152,7 @@ while True:
     time.sleep(delay)
 EOF
 
-    echo -e "${GREEN}Скрипт для автоматизации общения создан.${NC}"
+    echo -e "${GREEN}Скрипт для автоматизации общения создан. Запускаем его в фоновом режиме...${NC}"
     nohup python3 ~/random_chat_with_faker.py > chat_automation.log 2>&1 &
     echo -e "${GREEN}Автоматизация общения с AI ботом запущена.${NC}"
 }
@@ -195,38 +180,5 @@ EOF
 
     sudo systemctl daemon-reload
     sudo systemctl enable gaianet.service
-    sudo systemctl restart gaianet.service
-    echo -e "${GREEN}Сервис для автоматического перезапуска ноды создан и запущен.${NC}"
-}
-
-function main_menu {
-    while true; do
-        echo -e "${YELLOW}Выберите действие:${NC}"
-        echo -e "${CYAN}1. Установка ноды${NC}"
-        echo -e "${CYAN}2. Просмотр логов${NC}"
-        echo -e "${CYAN}3. Удаление ноды${NC}"
-        echo -e "${CYAN}4. Перезапуск ноды${NC}"
-        echo -e "${CYAN}5. Просмотр Node id и Device id${NC}"
-        echo -e "${CYAN}6. Изменить порт${NC}"
-        echo -e "${CYAN}7. Установка автоматизации общения с AI ботом${NC}"
-        echo -e "${CYAN}8. Установка автоматического перезапуска ноды при падении${NC}"
-        echo -e "${CYAN}9. Выход${NC}"
-       
-        echo -e "${YELLOW}Введите номер:${NC} "
-        read choice
-        case $choice in
-            1) install_node ;;
-            2) view_logs ;;
-            3) remove_node ;;
-            4) restart_node ;;
-            5) view_node_info ;;
-            6) change_port ;;
-            7) setup_ai_chat_automation ;;
-            8) setup_auto_restart ;;
-            9) break ;;
-            *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
-        esac
-    done
-}
-
-main_menu
+    sudo systemctl start gaianet.service
+    echo -e "${GREEN}Сервис для автоматического
