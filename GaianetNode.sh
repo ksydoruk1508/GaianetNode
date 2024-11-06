@@ -55,6 +55,12 @@ function view_logs {
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
 }
 
+function view_ai_chat_logs {
+    echo -e "${YELLOW}Просмотр логов общения с AI ботом (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
+    tail -n 50 ~/chat_log.txt
+    echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
+}
+
 function remove_node {
     echo -e "${BLUE}Удаляем ноду Gaianet...${NC}"
     pkill -f "/root/gaianet/bin/gaianet start"
@@ -194,7 +200,8 @@ function main_menu {
         echo -e "${CYAN}6. Изменить порт${NC}"
         echo -e "${CYAN}7. Установить скрипт на перезапуск ноды${NC}"
         echo -e "${CYAN}8. Установить скрипт для автоматизации общения с AI ботом${NC}"
-        echo -e "${CYAN}9. Выход${NC}"
+        echo -e "${CYAN}9. Просмотр логов общения с AI ботом${NC}"
+        echo -e "${CYAN}10. Выход${NC}"
        
         echo -e "${YELLOW}Введите номер:${NC} "
         read choice
@@ -207,7 +214,8 @@ function main_menu {
             6) change_port ;;
             7) setup_restart_service ;;
             8) setup_ai_chat_automation ;;
-            9) break ;;
+            9) view_ai_chat_logs ;;
+            10) break ;;
             *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
         esac
     done
