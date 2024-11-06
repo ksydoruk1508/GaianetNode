@@ -71,6 +71,8 @@ function remove_node {
 function restart_node {
     echo -e "${BLUE}Перезапускаем ноду Gaianet...${NC}"
     pkill -f "/root/gaianet/bin/gaianet start"
+    sleep 5
+    fuser -k 8084/tcp  # Освобождение порта, если он занят
     echo -e "${BLUE}Запускаем ноду в фоновом режиме...${NC}"
     nohup /root/gaianet/bin/gaianet start > gaianet_node.log 2>&1 &
     echo -e "${GREEN}Нода Gaianet успешно перезапущена.${NC}"
