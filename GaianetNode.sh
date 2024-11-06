@@ -66,6 +66,18 @@ function remove_node {
     pkill -f "/root/gaianet/bin/gaianet start"
     sudo rm -rf /root/gaianet
     echo -e "${GREEN}Нода Gaianet успешно удалена.${NC}"
+
+    echo -e "${BLUE}Удаляем скрипт для автоматизации общения с AI ботом...${NC}"
+    pkill -f "python3 ~/random_chat_with_faker.py"
+    rm -f ~/random_chat_with_faker.py ~/chat_log.txt
+    echo -e "${GREEN}Скрипт для автоматизации общения с AI ботом успешно удален.${NC}"
+
+    echo -e "${BLUE}Удаляем сервис для перезапуска ноды...${NC}"
+    sudo systemctl stop gaianet.service
+    sudo systemctl disable gaianet.service
+    sudo rm -f /etc/systemd/system/gaianet.service
+    sudo systemctl daemon-reload
+    echo -e "${GREEN}Сервис для перезапуска ноды успешно удален.${NC}"
 }
 
 function restart_node {
