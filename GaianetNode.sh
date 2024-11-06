@@ -126,7 +126,7 @@ User=root
 [Install]
 WantedBy=multi-user.target
 EOF
-    sudo gaianet stop
+    gaianet stop
     sudo systemctl daemon-reload
     sudo systemctl enable gaianet.service
     sudo systemctl restart gaianet.service
