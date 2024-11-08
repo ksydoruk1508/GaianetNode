@@ -67,6 +67,12 @@ function remove_node {
     sudo rm -rf /root/gaianet
     echo -e "${GREEN}Нода Gaianet успешно удалена.${NC}"
 
+    echo -e "${BLUE}Удаляем WasmEdge...${NC}"
+    sudo rm -rf /usr/local/include/wasmedge
+    sudo rm -f /usr/local/lib/libwasmedge*
+    sudo rm -f /usr/local/bin/wasmedge*
+    echo -e "${GREEN}WasmEdge успешно удален.${NC}"
+
     echo -e "${BLUE}Удаляем скрипт для автоматизации общения с AI ботом...${NC}"
     pkill -f "python3 ~/random_chat_with_faker.py"
     rm -f ~/random_chat_with_faker.py ~/chat_log.txt
