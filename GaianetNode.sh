@@ -41,9 +41,30 @@ function install_node {
     echo -e "${BLUE}Инициализируем GaiaNet с конфигурацией...${NC}"
     /root/gaianet/bin/gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
 
-    echo -e "${BLUE}Запускаем ноду в фоновом режиме...${NC}"
-    nohup /root/gaianet/bin/gaianet start > gaianet_node.log 2>&1 &
-    echo -e "${GREEN}Нода Gaianet успешно установлена и запущена в фоновом режиме.${NC}"
+    echo -e "${BLUE}Создаем сервисный файл для автоматического перезапуска ноды...${NC}"
+    cat <<EOF | sudo tee /etc/systemd/system/gaianet.service
+[Unit]
+Description=Gaianet Node Service
+After=network.target
+
+[Service]
+Type=forking
+RemainAfterExit=true
+ExecStart=/root/gaianet/bin/gaianet start
+ExecStop=/root/gaianet/bin/gaianet stop
+ExecStopPost=/bin/sleep 20
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    gaianet stop
+    sudo systemctl daemon-reload
+    sudo systemctl enable gaianet.service
+    sudo systemctl restart gaianet.service
+    echo -e "${GREEN}Нода Gaianet и сервис для автоматического перезапуска ноды успешно установлены и запущены.${NC}"
 
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
     main_menu
@@ -110,33 +131,6 @@ function change_port {
     jq ".llamaedge_port = \"${new_port}\"" /root/gaianet/config.json > /root/gaianet/config_tmp.json && mv /root/gaianet/config_tmp.json /root/gaianet/config.json
     echo -e "${BLUE}Перезапускаем ноду с новым портом...${NC}"
     restart_node
-}
-
-function setup_restart_service {
-    echo -e "${BLUE}Создаем сервисный файл для автоматического перезапуска ноды...${NC}"
-    cat <<EOF | sudo tee /etc/systemd/system/gaianet.service
-[Unit]
-Description=Gaianet Node Service
-After=network.target
-
-[Service]
-Type=forking
-RemainAfterExit=true
-ExecStart=/root/gaianet/bin/gaianet start
-ExecStop=/root/gaianet/bin/gaianet stop
-ExecStopPost=/bin/sleep 20
-Restart=always
-RestartSec=5
-User=root
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    gaianet stop
-    sudo systemctl daemon-reload
-    sudo systemctl enable gaianet.service
-    sudo systemctl restart gaianet.service
-    echo -e "${GREEN}Сервис для автоматического перезапуска ноды успешно создан и запущен.${NC}"
 }
 
 function setup_ai_chat_automation {
@@ -219,10 +213,9 @@ function main_menu {
         echo -e "${CYAN}4. Перезапуск ноды${NC}"
         echo -e "${CYAN}5. Просмотр Node id и Device id${NC}"
         echo -e "${CYAN}6. Изменить порт${NC}"
-        echo -e "${CYAN}7. Установить скрипт на перезапуск ноды${NC}"
-        echo -e "${CYAN}8. Установить скрипт для автоматизации общения с AI ботом${NC}"
-        echo -e "${CYAN}9. Просмотр логов общения с AI ботом${NC}"
-        echo -e "${CYAN}10. Выход${NC}"
+        echo -e "${CYAN}7. Установить скрипт для автоматизации общения с AI ботом${NC}"
+        echo -e "${CYAN}8. Просмотр логов общения с AI ботом${NC}"
+        echo -e "${CYAN}9. Выход${NC}"
        
         echo -e "${YELLOW}Введите номер:${NC} "
         read choice
@@ -233,10 +226,9 @@ function main_menu {
             4) restart_node ;;
             5) view_node_info ;;
             6) change_port ;;
-            7) setup_restart_service ;;
-            8) setup_ai_chat_automation ;;
-            9) view_ai_chat_logs ;;
-            10) break ;;
+            7) setup_ai_chat_automation ;;
+            8) view_ai_chat_logs ;;
+            9) break ;;
             *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
         esac
     done
