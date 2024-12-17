@@ -134,7 +134,7 @@ function change_port {
 }
 
 function setup_ai_chat_automation {
-    echo -e "${YELLOW}Введите ваш Subdomain:${NC}"
+    echo -e "${YELLOW}Введите ваш Subdomain (например: 0xb37b848a654d75e6e6a816098bbdb74664e82eaa.us.gaianet.network):${NC}"
     read subdomain
     echo -e "${BLUE}Устанавливаем скрипт для автоматизации общения с AI ботом...${NC}"
     pip install requests
@@ -212,7 +212,7 @@ function main_menu {
         echo -e "${CYAN}3. Удаление ноды${NC}"
         echo -e "${CYAN}4. Перезапуск ноды${NC}"
         echo -e "${CYAN}5. Просмотр Node id и Device id${NC}"
-        echo -e "${CYAN}6. Изменить порт${NC}"
+        echo -e "${CYAN}6. Изменить порт (в данный момент работает только на установленном по умолчанию: 8080)${NC}"
         echo -e "${CYAN}7. Установить скрипт для автоматизации общения с AI ботом${NC}"
         echo -e "${CYAN}8. Просмотр логов общения с AI ботом${NC}"
         echo -e "${CYAN}9. Выход${NC}"
