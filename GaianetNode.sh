@@ -204,6 +204,15 @@ EOF
     echo -e "${GREEN}Скрипт для автоматизации общения с AI ботом успешно установлен и запущен в фоновом режиме.${NC}"
 }
 
+function update_node {
+    echo -e "${BLUE}Обновляем ноду...${NC}"
+    gaianet stop
+    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash
+    source $HOME/.bashrc
+    gaianet start
+    echo -e "${GREEN}Нода Gaianet успешно обновлена.${NC}"
+}
+
 function main_menu {
     while true; do
         echo -e "${YELLOW}Выберите действие:${NC}"
@@ -215,7 +224,8 @@ function main_menu {
         echo -e "${CYAN}6. Изменить порт (в данный момент работает только на установленном по умолчанию: 8080)${NC}"
         echo -e "${CYAN}7. Установить скрипт для автоматизации общения с AI ботом${NC}"
         echo -e "${CYAN}8. Просмотр логов общения с AI ботом${NC}"
-        echo -e "${CYAN}9. Выход${NC}"
+        echo -e "${CYAN}9. Обновить ноду${NC}"
+        echo -e "${CYAN}10. Выход${NC}"
        
         echo -e "${YELLOW}Введите номер:${NC} "
         read choice
@@ -228,7 +238,8 @@ function main_menu {
             6) change_port ;;
             7) setup_ai_chat_automation ;;
             8) view_ai_chat_logs ;;
-            9) break ;;
+            9) update_node ;;
+            10) break ;;
             *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
         esac
     done
