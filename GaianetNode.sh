@@ -42,53 +42,7 @@ function install_node {
     /root/gaianet/bin/gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
 
     echo -e "${BLUE}Создаем сервисный файл для автоматического перезапуска ноды...${NC}"
-    cat <<EOF | sudo tee /etc/systemd/system/gaianet.service
-[Unit]
-Description=Gaianet Node Service
-After=network.target
-
-[Service]
-Type=forking
-RemainAfterExit=true
-ExecStart=/root/gaianet/bin/gaianet start
-ExecStop=/root/gaianet/bin/gaianet stop
-ExecStopPost=/bin/sleep 20
-Restart=always
-RestartSec=5
-User=root
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    gaianet stop
-    sudo systemctl daemon-reload
-    sudo systemctl enable gaianet.service
-    sudo systemctl restart gaianet.service
-    echo -e "${GREEN}Нода Gaianet и сервис для автоматического перезапуска ноды успешно установлены и запущены.${NC}"
-
-    echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
-    main_menu
-}
-
-function view_logs {
-    echo -e "${YELLOW}Проверяем существование файла логов ноды...${NC}"
-    
-    # Проверяем текущую директорию
-    if [ -f gaianet_node.log ]; then
-        echo -e "${YELLOW}Просмотр логов ноды (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
-        tail -n 50 gaianet_node.log
-    # Проверяем в /root/gaianet (предполагаемый путь)
-    elif [ -f /root/gaianet/gaianet_node.log ]; then
-        echo -e "${YELLOW}Логи найдены в /root/gaianet/gaianet_node.log. Просмотр (последние 50 строк, выход: Ctrl+C)...${NC}"
-        tail -n 50 /root/gaianet/gaianet_node.log
-    # Проверяем в /var/log (альтернативный возможный путь)
-    elif [ -f /var/log/gaianet_node.log ]; then
-        echo -e "${YELLOW}Логи найдены в /var/log/gaianet_node.log. Просмотр (последние 50 строк, выход: Ctrl+C)...${NC}"
-        tail -n 50 /var/log/gaianet_node.log
-    else
-        echo -e "${RED}Файл логов ноды (gaianet_node.log) не найден ни в текущей директории, ни в /root/gaianet/, ни в /var/log/.${NC}"
-        echo -e "${YELLOW}Проверьте, где нода записывает свои логи, или убедитесь, что нода запущена.${NC}"
-        echo -e "${YELLOW}Попробуйте вручную найти файл с помощью: sudo find / -name \"gaianet_node.log\" 2>/dev/null${NC}"
+    cat </dev/null${NC}"
         echo -e "${YELLOW}Если нода не запущена, попробуйте перезапустить её: /root/gaianet/bin/gaianet start${NC}"
     fi
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
@@ -167,7 +121,7 @@ function setup_ai_chat_automation {
     pip install requests
     pip install faker
     echo -e "${BLUE}Создаем скрипт random_chat_with_faker.py...${NC}"
-    cat <<EOF > ~/random_chat_with_faker.py
+    cat < ~/random_chat_with_faker.py
 import requests
 import random
 import logging
@@ -240,6 +194,23 @@ function update_node {
     echo -e "${GREEN}Нода Gaianet успешно обновлена.${NC}"
 }
 
+# Новая функция для перезапуска скрипта автоматизации общения с AI ботом
+function restart_ai_chat_script {
+    echo -e "${BLUE}Проверяем, запущен ли скрипт random_chat_with_faker.py...${NC}"
+    # Проверяем, есть ли процесс с именем random_chat_with_faker.py
+    if pgrep -f "python3 ~/random_chat_with_faker.py" > /dev/null; then
+        echo -e "${YELLOW}Останавливаем текущий процесс скрипта...${NC}"
+        pkill -f "python3 ~/random_chat_with_faker.py"
+        sleep 2  # Даем время процессу завершиться
+    else
+        echo -e "${YELLOW}Скрипт random_chat_with_faker.py не найден в запущенных процессах.${NC}"
+    fi
+
+    echo -e "${BLUE}Запускаем скрипт random_chat_with_faker.py заново в фоновом режиме...${NC}"
+    nohup python3 ~/random_chat_with_faker.py > ~/random_chat_with_faker.log 2>&1 &
+    echo -e "${GREEN}Скрипт для автоматизации общения с AI ботом успешно перезапущен в фоновом режиме.${NC}"
+}
+
 function main_menu {
     while true; do
         echo -e "${YELLOW}Выберите действие:${NC}"
@@ -252,6 +223,7 @@ function main_menu {
         echo -e "${CYAN}7. Установить скрипт для автоматизации общения с AI ботом${NC}"
         echo -e "${CYAN}8. Просмотр логов общения с AI ботом${NC}"
         echo -e "${CYAN}9. Обновить ноду${NC}"
+        echo -e "${CYAN}11. Перезапустить скрипт автоматизации общения с AI ботом${NC}"  # Добавлен новый пункт меню
         echo -e "${CYAN}10. Выход${NC}"
        
         echo -e "${YELLOW}Введите номер:${NC} "
@@ -266,6 +238,7 @@ function main_menu {
             7) setup_ai_chat_automation ;;
             8) view_ai_chat_logs ;;
             9) update_node ;;
+            11) restart_ai_chat_script ;;  # Добавлен вызов новой функции
             10) break ;;
             *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
         esac
