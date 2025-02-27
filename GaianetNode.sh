@@ -60,7 +60,7 @@ function view_ai_chat_logs {
     
     # Проверяем файл chat_log.txt в домашней директории
     if [ -f ~/chat_log.txt ]; then
-        echo -e "${YELLOW}Просмотр логов общения с AI ботом (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
+        echo -e "${YELLOW}Просмотр логов общения с AI ботом \(последние 50 строк, выход из режима просмотра: Ctrl+C\)...${NC}"
         tail -n 50 ~/chat_log.txt
     else
         echo -e "${RED}Файл логов общения с AI ботом (~ /chat_log.txt) не найден.${NC}"
