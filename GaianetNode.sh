@@ -8,14 +8,20 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # Нет цвета (сброс цвета)
 
+# Установка UTF-8 для корректной работы с русскими символами
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
+
 # Проверка наличия curl и установка, если не установлен
 if ! command -v curl &> /dev/null; then
+    echo -e "${BLUE}Устанавливаем curl...${NC}"
     sudo apt update
     sudo apt install curl -y
 fi
 
 # Проверка наличия jq и установка, если не установлен
 if ! command -v jq &> /dev/null; then
+    echo -e "${BLUE}Устанавливаем jq...${NC}"
     sudo apt update
     sudo apt install jq -y
 fi
@@ -33,7 +39,8 @@ function install_node {
     sudo apt-get update -y && sudo apt upgrade -y && sudo apt install -y python3-pip nano
 
     echo -e "${BLUE}Загружаем и выполняем скрипт установки ноды Gaianet...${NC}"
-    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash && echo 'export PATH=$PATH:/root/gaianet/bin' >> ~/.bashrc && source ~/.bashrc
+    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash && \
+    echo 'export PATH=$PATH:/root/gaianet/bin' >> ~/.bashrc && source ~/.bashrc
 
     echo -e "${BLUE}Настраиваем конфигурацию Bash...${NC}"
     export PATH=$PATH:/root/gaianet/bin
@@ -56,7 +63,7 @@ function view_ai_chat_logs {
         echo -e "${YELLOW}Просмотр логов общения с AI ботом (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
         tail -n 50 ~/chat_log.txt
     else
-        echo -e "${RED}Файл логов общения с AI ботом (~/chat_log.txt) не найден.${NC}"
+        echo -e "${RED}Файл логов общения с AI ботом (~ /chat_log.txt) не найден.${NC}"
         echo -e "${YELLOW}Убедитесь, что скрипт автоматизации общения с AI ботом запущен и создаёт логи.${NC}"
         echo -e "${YELLOW}Попробуйте запустить скрипт вручную: nohup python3 ~/random_chat_with_faker.py > ~/random_chat_with_faker.log 2>&1 &${NC}"
     fi
@@ -223,7 +230,7 @@ function main_menu {
         echo -e "${CYAN}7. Установить скрипт для автоматизации общения с AI ботом${NC}"
         echo -e "${CYAN}8. Просмотр логов общения с AI ботом${NC}"
         echo -e "${CYAN}9. Обновить ноду${NC}"
-        echo -e "${CYAN}11. Перезапустить скрипт автоматизации общения с AI ботом${NC}"  # Добавлен новый пункт меню
+        echo -e "${CYAN}11. Перезапустить скрипт автоматизации общения с AI ботом${NC}"
         echo -e "${CYAN}10. Выход${NC}"
        
         echo -e "${YELLOW}Введите номер:${NC} "
@@ -238,7 +245,7 @@ function main_menu {
             7) setup_ai_chat_automation ;;
             8) view_ai_chat_logs ;;
             9) update_node ;;
-            11) restart_ai_chat_script ;;  # Добавлен вызов новой функции
+            11) restart_ai_chat_script ;;
             10) break ;;
             *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
         esac
