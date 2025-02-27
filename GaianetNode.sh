@@ -250,4 +250,26 @@ function main_menu {
         echo -e "${CYAN}5. Просмотр Node id и Device id${NC}"
         echo -e "${CYAN}6. Изменить порт (в данный момент работает только на установленном по умолчанию: 8080)${NC}"
         echo -e "${CYAN}7. Установить скрипт для автоматизации общения с AI ботом${NC}"
-        echo -e "${CY​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​
+        echo -e "${CYAN}8. Просмотр логов общения с AI ботом${NC}"
+        echo -e "${CYAN}9. Обновить ноду${NC}"
+        echo -e "${CYAN}10. Выход${NC}"
+       
+        echo -e "${YELLOW}Введите номер:${NC} "
+        read choice
+        case $choice in
+            1) install_node ;;
+            2) view_logs ;;
+            3) remove_node ;;
+            4) restart_node ;;
+            5) view_node_info ;;
+            6) change_port ;;
+            7) setup_ai_chat_automation ;;
+            8) view_ai_chat_logs ;;
+            9) update_node ;;
+            10) break ;;
+            *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
+        esac
+    done
+}
+
+main_menu
