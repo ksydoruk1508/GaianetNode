@@ -81,10 +81,15 @@ function view_logs {
     elif [ -f /root/gaianet/gaianet_node.log ]; then
         echo -e "${YELLOW}Логи найдены в /root/gaianet/gaianet_node.log. Просмотр (последние 50 строк, выход: Ctrl+C)...${NC}"
         tail -n 50 /root/gaianet/gaianet_node.log
+    # Проверяем в /var/log (альтернативный возможный путь)
+    elif [ -f /var/log/gaianet_node.log ]; then
+        echo -e "${YELLOW}Логи найдены в /var/log/gaianet_node.log. Просмотр (последние 50 строк, выход: Ctrl+C)...${NC}"
+        tail -n 50 /var/log/gaianet_node.log
     else
-        echo -e "${RED}Файл логов ноды (gaianet_node.log) не найден ни в текущей директории, ни в /root/gaianet/.${NC}"
+        echo -e "${RED}Файл логов ноды (gaianet_node.log) не найден ни в текущей директории, ни в /root/gaianet/, ни в /var/log/.${NC}"
         echo -e "${YELLOW}Проверьте, где нода записывает свои логи, или убедитесь, что нода запущена.${NC}"
-        echo -e "${YELLOW}Попробуйте вручную найти файл с помощью: find / -name \"gaianet_node.log\" 2>/dev/null${NC}"
+        echo -e "${YELLOW}Попробуйте вручную найти файл с помощью: sudo find / -name \"gaianet_node.log\" 2>/dev/null${NC}"
+        echo -e "${YELLOW}Если нода не запущена, попробуйте перезапустить её: /root/gaianet/bin/gaianet start${NC}"
     fi
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
 }
@@ -99,6 +104,7 @@ function view_ai_chat_logs {
     else
         echo -e "${RED}Файл логов общения с AI ботом (~/chat_log.txt) не найден.${NC}"
         echo -e "${YELLOW}Убедитесь, что скрипт автоматизации общения с AI ботом запущен и создаёт логи.${NC}"
+        echo -e "${YELLOW}Попробуйте запустить скрипт вручную: nohup python3 ~/random_chat_with_faker.py > ~/random_chat_with_faker.log 2>&1 &${NC}"
     fi
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
 }
@@ -189,7 +195,7 @@ def send_message(node_url, message):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"Failed to get response from API: {e}")
+        print(f"Ошибка при получении ответа от API: {e}")
         return None
 
 def extract_reply(response):
@@ -201,7 +207,7 @@ while True:
     random_question = faker.sentence(nb_words=10)
     message = {
         "messages": [
-            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "system", "content": "Вы — полезный ассистент."},
             {"role": "user", "content": random_question}
         ]
     }
@@ -244,26 +250,4 @@ function main_menu {
         echo -e "${CYAN}5. Просмотр Node id и Device id${NC}"
         echo -e "${CYAN}6. Изменить порт (в данный момент работает только на установленном по умолчанию: 8080)${NC}"
         echo -e "${CYAN}7. Установить скрипт для автоматизации общения с AI ботом${NC}"
-        echo -e "${CYAN}8. Просмотр логов общения с AI ботом${NC}"
-        echo -e "${CYAN}9. Обновить ноду${NC}"
-        echo -e "${CYAN}10. Выход${NC}"
-       
-        echo -e "${YELLOW}Введите номер:${NC} "
-        read choice
-        case $choice in
-            1) install_node ;;
-            2) view_logs ;;
-            3) remove_node ;;
-            4) restart_node ;;
-            5) view_node_info ;;
-            6) change_port ;;
-            7) setup_ai_chat_automation ;;
-            8) view_ai_chat_logs ;;
-            9) update_node ;;
-            10) break ;;
-            *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
-        esac
-    done
-}
-
-main_menu
+        echo -e "${CY​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​​
