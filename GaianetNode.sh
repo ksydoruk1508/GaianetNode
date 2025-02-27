@@ -71,14 +71,35 @@ EOF
 }
 
 function view_logs {
-    echo -e "${YELLOW}Просмотр логов ноды (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
-    tail -n 50 gaianet_node.log
+    echo -e "${YELLOW}Проверяем существование файла логов ноды...${NC}"
+    
+    # Проверяем текущую директорию
+    if [ -f gaianet_node.log ]; then
+        echo -e "${YELLOW}Просмотр логов ноды (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
+        tail -n 50 gaianet_node.log
+    # Проверяем в /root/gaianet (предполагаемый путь)
+    elif [ -f /root/gaianet/gaianet_node.log ]; then
+        echo -e "${YELLOW}Логи найдены в /root/gaianet/gaianet_node.log. Просмотр (последние 50 строк, выход: Ctrl+C)...${NC}"
+        tail -n 50 /root/gaianet/gaianet_node.log
+    else
+        echo -e "${RED}Файл логов ноды (gaianet_node.log) не найден ни в текущей директории, ни в /root/gaianet/.${NC}"
+        echo -e "${YELLOW}Проверьте, где нода записывает свои логи, или убедитесь, что нода запущена.${NC}"
+        echo -e "${YELLOW}Попробуйте вручную найти файл с помощью: find / -name \"gaianet_node.log\" 2>/dev/null${NC}"
+    fi
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
 }
 
 function view_ai_chat_logs {
-    echo -e "${YELLOW}Просмотр логов общения с AI ботом (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
-    tail -n 50 ~/chat_log.txt
+    echo -e "${YELLOW}Проверяем существование файла логов общения с AI ботом...${NC}"
+    
+    # Проверяем файл chat_log.txt в домашней директории
+    if [ -f ~/chat_log.txt ]; then
+        echo -e "${YELLOW}Просмотр логов общения с AI ботом (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
+        tail -n 50 ~/chat_log.txt
+    else
+        echo -e "${RED}Файл логов общения с AI ботом (~/chat_log.txt) не найден.${NC}"
+        echo -e "${YELLOW}Убедитесь, что скрипт автоматизации общения с AI ботом запущен и создаёт логи.${NC}"
+    fi
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
 }
 
@@ -113,7 +134,7 @@ function restart_node {
     sleep 5
     fuser -k 8084/tcp  # Освобождение порта, если он занят
     echo -e "${BLUE}Запускаем ноду в фоновом режиме...${NC}"
-    nohup /root/gaianet/bin/gaianet start > gaianet_node.log 2>&1 &
+    nohup /root/gaianet/bin/gaianet start > /root/gaianet/gaianet_node.log 2>&1 &  # Указываем путь для логов
     echo -e "${GREEN}Нода Gaianet успешно перезапущена.${NC}"
 }
 
@@ -157,7 +178,7 @@ headers = {
     "Content-Type": "application/json"
 }
 
-logging.basicConfig(filename='chat_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
+logging.basicConfig(filename='~/chat_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def log_message(node, message):
     logging.info(f"{node}: {message}")
