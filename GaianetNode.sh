@@ -29,23 +29,26 @@ EOF
 echo -e "${NC}"
 
 function install_node {
-    echo -e "${BLUE}Обновляем сервер...${NC}"
-    sudo apt-get update -y && sudo apt upgrade -y && sudo apt install -y python3-pip nano
+    echo -e "${BLUE}Обновляем и устанавливаем необходимые пакеты...${NC}"
+    sudo apt update -y
+    sudo apt-get update
 
-    echo -e "${BLUE}Загружаем и выполняем скрипт установки ноды Gaianet...${NC}"
-    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash && echo 'export PATH=$PATH:/root/gaianet/bin' >> ~/.bashrc && source ~/.bashrc
+    echo -e "${BLUE}Загружаем и выполняем последнюю версию скрипта установки GaiaNet Node...${NC}"
+    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash
 
-    echo -e "${BLUE}Настраиваем конфигурацию Bash...${NC}"
+    echo -e "${BLUE}Выбираем конфигурацию Bash...${NC}"
     source ~/.bashrc
     
     echo -e "${BLUE}Инициализируем GaiaNet с конфигурацией...${NC}"
     gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
 
+    echo -e "${BLUE}Запускаем ноду...${NC}"
     gaianet start
 
-    gianet stop
+    echo -e "${BLUE}Останавливаем ноду...${NC}"
+    gaianet stop
 
-    echo -e "${BLUE}Создаем сервисный файл для автоматического перезапуска ноды...${NC}"
+    echo -e "${BLUE}Создаем сервисный файл для автозапуска GaiaNet при падении...${NC}"
     cat <<EOF | sudo tee /etc/systemd/system/gaianet.service
 [Unit]
 Description=Gaianet Node Service
@@ -63,90 +66,32 @@ User=root
 WantedBy=multi-user.target
 EOF
 
+    echo -e "${BLUE}Перезагружаем конфигурацию systemd и рестартуем сервис...${NC}"
     sudo systemctl daemon-reload
     sudo systemctl restart gaianet.service
-    echo -e "${GREEN}Нода Gaianet и сервис для автоматического перезапуска ноды успешно установлены и запущены.${NC}"
 
-    echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
-    main_menu
-}
+    echo -e "${BLUE}Проверяем статус сервиса...${NC}"
+    sudo systemctl status gaianet.service
 
-function view_logs {
-    journalctl -u gaianet.service -f
-}
-
-function view_ai_chat_logs {
-    echo -e "${YELLOW}Проверяем существование файла логов общения с AI ботом...${NC}"
-    
-    # Проверяем файл chat_log.txt в домашней директории
-    if [ -f ~/chat_log.txt ]; then
-        echo -e "${YELLOW}Просмотр логов общения с AI ботом (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
-        tail -n 50 ~/chat_log.txt
-    else
-        echo -e "${RED}Файл логов общения с AI ботом (~/chat_log.txt) не найден.${NC}"
-        echo -e "${YELLOW}Убедитесь, что скрипт автоматизации общения с AI ботом запущен и создаёт логи.${NC}"
-        echo -e "${YELLOW}Попробуйте запустить скрипт вручную: nohup python3 ~/random_chat_with_faker.py > ~/random_chat_with_faker.log 2>&1 &${NC}"
-    fi
-    echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
-}
-
-function remove_node {
-    echo -e "${BLUE}Удаляем ноду Gaianet...${NC}"
-    pkill -f "/root/gaianet/bin/gaianet start"
-    sudo rm -rf /root/gaianet
-    echo -e "${GREEN}Нода Gaianet успешно удалена.${NC}"
-
-    echo -e "${BLUE}Удаляем WasmEdge...${NC}"
-    sudo rm -rf /usr/local/include/wasmedge
-    sudo rm -f /usr/local/lib/libwasmedge*
-    sudo rm -f /usr/local/bin/wasmedge*
-    echo -e "${GREEN}WasmEdge успешно удален.${NC}"
-
-    echo -e "${BLUE}Удаляем скрипт для автоматизации общения с AI ботом...${NC}"
-    pkill -f "python3 ~/random_chat_with_faker.py"
-    rm -f ~/random_chat_with_faker.py ~/chat_log.txt
-    echo -e "${GREEN}Скрипт для автоматизации общения с AI ботом успешно удален.${NC}"
-
-    echo -e "${BLUE}Удаляем сервис для перезапуска ноды...${NC}"
-    sudo systemctl stop gaianet.service
-    sudo systemctl disable gaianet.service
-    sudo rm -f /etc/systemd/system/gaianet.service
-    sudo systemctl daemon-reload
-    echo -e "${GREEN}Сервис для перезапуска ноды успешно удален.${NC}"
-}
-
-function restart_node {
-    echo -e "${BLUE}Перезапускаем ноду Gaianet...${NC}"
-    pkill -f "/root/gaianet/bin/gaianet start"
-    sleep 5
-    fuser -k 8084/tcp  # Освобождение порта, если он занят
-    echo -e "${BLUE}Запускаем ноду в фоновом режиме...${NC}"
-    nohup /root/gaianet/bin/gaianet start > /root/gaianet/gaianet_node.log 2>&1 &  # Указываем путь для логов
-    echo -e "${GREEN}Нода Gaianet успешно перезапущена.${NC}"
-}
-
-function view_node_info {
-    echo -e "${YELLOW}Просмотр Node id и Device id...${NC}"
-    /root/gaianet/bin/gaianet info
-    echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
-}
-
-function change_port {
-    current_port=$(jq -r '.llamaedge_port' /root/gaianet/config.json)
-    echo -e "${YELLOW}Текущий порт: ${current_port}${NC}"
-    echo -e "${YELLOW}Введите новый порт:${NC}"
-    read new_port
-    jq ".llamaedge_port = \"${new_port}\"" /root/gaianet/config.json > /root/gaianet/config_tmp.json && mv /root/gaianet/config_tmp.json /root/gaianet/config.json
-    echo -e "${BLUE}Перезапускаем ноду с новым портом...${NC}"
-    restart_node
+    echo -e "${GREEN}Установка ноды GaiaNet завершена успешно!${NC}"
 }
 
 function setup_ai_chat_automation {
-    echo -e "${YELLOW}Введите ваш Subdomain (например: 0xb37b848a654d75e6e6a816098bbdb74664e82eaa.gaia.domains):${NC}"
-    read subdomain
-    echo -e "${BLUE}Устанавливаем скрипт для автоматизации общения с AI ботом...${NC}"
+    echo -e "${YELLOW}Введите ваш адрес. Например: 0xb37b848a654d75e6e6a816098bbdb74664e82eaa.gaia.domains${NC}"
+    read wallet_address
+
+    echo -e "${BLUE}Обновляем и устанавливаем необходимые пакеты...${NC}"
+    sudo apt update -y
+    sudo apt update
+
+    echo -e "${BLUE}Устанавливаем Python, редактор nano и необходимые утилиты...${NC}"
+    sudo apt install python3-pip -y
+    sudo apt install nano -y
+
+    echo -e "${BLUE}Устанавливаем нужные библиотеки...${NC}"
     pip install requests
     pip install faker
+
     echo -e "${BLUE}Создаем скрипт random_chat_with_faker.py...${NC}"
     cat <<EOF > ~/random_chat_with_faker.py
 import requests
@@ -156,7 +101,7 @@ import time
 from faker import Faker
 from datetime import datetime
 
-node_url = "https://${subdomain}/v1/chat/completions"
+node_url = "https://${wallet_address}/v1/chat/completions"
 
 faker = Faker()
 
@@ -165,7 +110,7 @@ headers = {
     "Content-Type": "application/json"
 }
 
-logging.basicConfig(filename='~/chat_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
+logging.basicConfig(filename='chat_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def log_message(node, message):
     logging.info(f"{node}: {message}")
@@ -176,7 +121,7 @@ def send_message(node_url, message):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"Ошибка при получении ответа от API: {e}")
+        print(f"Failed to get response from API: {e}")
         return None
 
 def extract_reply(response):
@@ -188,28 +133,68 @@ while True:
     random_question = faker.sentence(nb_words=10)
     message = {
         "messages": [
-            {"role": "system", "content": "Вы — полезный ассистент."},
+            {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": random_question}
         ]
     }
-    
+
     question_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
     response = send_message(node_url, message)
     reply = extract_reply(response)
-    
+
     reply_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
+
     log_message("Node replied", f"Q ({question_time}): {random_question} A ({reply_time}): {reply}")
-    
+
     print(f"Q ({question_time}): {random_question}\nA ({reply_time}): {reply}")
-    
+
     delay = random.randint(60, 180)
     time.sleep(delay)
 EOF
+
     echo -e "${BLUE}Запускаем скрипт random_chat_with_faker.py в фоновом режиме с помощью nohup...${NC}"
     nohup python3 ~/random_chat_with_faker.py > ~/random_chat_with_faker.log 2>&1 &
+
     echo -e "${GREEN}Скрипт для автоматизации общения с AI ботом успешно установлен и запущен в фоновом режиме.${NC}"
+}
+
+function check_node_status {
+    echo -e "${BLUE}Проверяем статус ноды Gaianet...${NC}"
+    sudo systemctl status gaianet.service
+    echo -e "${BLUE}Проверка завершена.${NC}"
+}
+
+function view_logs {
+    journalctl -u gaianet.service -f
+}
+
+function view_ai_chat_logs {
+    echo -e "${YELLOW}Проверяем существование файла логов общения с AI ботом...${NC}"
+    
+    if [ -f ~/chat_log.txt ]; then
+        echo -e "${YELLOW}Просмотр логов общения с AI ботом (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
+        tail -n 50 ~/chat_log.txt
+    else
+        echo -e "${RED}Файл логов общения с AI ботом (~/chat_log.txt) не найден.${NC}"
+        echo -e "${YELLOW}Убедитесь, что скрипт автоматизации общения с AI ботом запущен и создаёт логи.${NC}"
+        echo -e "${YELLOW}Попробуйте запустить скрипт вручную: nohup python3 ~/random_chat_with_faker.py > ~/random_chat_with_faker.log 2>&1 &${NC}"
+    fi
+    echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
+}
+
+function view_node_info {
+    echo -e "${YELLOW}Просмотр Node id и Device id...${NC}"
+    /root/gaianet/bin/gaianet info
+    echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
+}
+
+function restart_node {
+    echo -e "${BLUE}Перезапускаем ноду Gaianet...${NC}"
+    gainet stop
+    sudo systemctl daemon-reload
+    sudo systemctl restart gaianet.service
+    echo -e "${GREEN}Нода Gaianet успешно перезапущена.${NC}"
 }
 
 function update_node {
@@ -221,32 +206,57 @@ function update_node {
     echo -e "${GREEN}Нода Gaianet успешно обновлена.${NC}"
 }
 
+function remove_node {
+    echo -e "${BLUE}Останавливаем и удаляем сервис Gaianet...${NC}"
+    gaianet stop
+    sudo systemctl stop gaianet.service
+    sudo systemctl disable gaianet.service
+    sudo rm -f /etc/systemd/system/gaianet.service
+    sudo systemctl daemon-reload
+    echo -e "${GREEN}Сервис Gaianet успешно остановлен и удален.${NC}"
+
+    echo -e "${BLUE}Удаляем ноду Gaianet...${NC}"
+    sudo rm -rf /root/gaianet
+    echo -e "${GREEN}Нода Gaianet успешно удалена.${NC}"
+
+    echo -e "${BLUE}Удаляем WasmEdge...${NC}"
+    sudo rm -rf /usr/local/include/wasmedge
+    sudo rm -f /usr/local/lib/libwasmedge*
+    sudo rm -f /usr/local/bin/wasmedge*
+    echo -e "${GREEN}WasmEdge успешно удален.${NC}"
+
+    echo -e "${BLUE}Удаляем скрипт для автоматизации общения с AI ботом...${NC}"
+    pkill -f "python3 ~/random_chat_with_faker.py"
+    rm -f ~/random_chat_with_faker.py ~/chat_log.txt ~/random_chat_with_faker.log
+    echo -e "${GREEN}Скрипт для автоматизации общения с AI ботом и его логи успешно удалены.${NC}"
+}
+
 function main_menu {
     while true; do
         echo -e "${YELLOW}Выберите действие:${NC}"
         echo -e "${CYAN}1. Установка ноды${NC}"
-        echo -e "${CYAN}2. Просмотр логов${NC}"
-        echo -e "${CYAN}3. Удаление ноды${NC}"
-        echo -e "${CYAN}4. Перезапуск ноды${NC}"
-        echo -e "${CYAN}5. Просмотр Node id и Device id${NC}"
-        echo -e "${CYAN}6. Изменить порт (в данный момент работает только на установленном по умолчанию: 8080)${NC}"
-        echo -e "${CYAN}7. Установить скрипт для автоматизации общения с AI ботом${NC}"
-        echo -e "${CYAN}8. Просмотр логов общения с AI ботом${NC}"
-        echo -e "${CYAN}9. Обновить ноду${NC}"
+        echo -e "${CYAN}2. Установить скрипт для автоматизации общения с AI ботом${NC}"
+        echo -e "${CYAN}3. Проверить статус ноды${NC}"
+        echo -e "${CYAN}4. Просмотр логов${NC}"
+        echo -e "${CYAN}5. Просмотр логов общения с AI ботом${NC}"
+        echo -e "${CYAN}6. Просмотр Node id и Device id${NC}"
+        echo -e "${CYAN}7. Перезапуск ноды${NC}"
+        echo -e "${CYAN}8. Обновить ноду${NC}"
+        echo -e "${CYAN}9. Удаление ноды${NC}"
         echo -e "${CYAN}10. Выход${NC}"
-       
+        
         echo -e "${YELLOW}Введите номер:${NC} "
         read choice
         case $choice in
             1) install_node ;;
-            2) view_logs ;;
-            3) remove_node ;;
-            4) restart_node ;;
-            5) view_node_info ;;
-            6) change_port ;;
-            7) setup_ai_chat_automation ;;
-            8) view_ai_chat_logs ;;
-            9) update_node ;;
+            2) setup_ai_chat_automation ;;
+            3) check_node_status ;;
+            4) view_logs ;;
+            5) view_ai_chat_logs ;;
+            6) view_node_info ;;
+            7) restart_node ;;
+            8) update_node ;;
+            9) remove_node ;;
             10) break ;;
             *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
         esac
