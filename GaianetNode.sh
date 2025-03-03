@@ -43,8 +43,6 @@ function install_node {
 
     gaianet start
 
-    sleep 60
-
     gianet stop
 
     echo -e "${BLUE}Создаем сервисный файл для автоматического перезапуска ноды...${NC}"
