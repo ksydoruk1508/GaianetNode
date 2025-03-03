@@ -36,17 +36,22 @@ function install_node {
     curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash && echo 'export PATH=$PATH:/root/gaianet/bin' >> ~/.bashrc && source ~/.bashrc
 
     echo -e "${BLUE}Настраиваем конфигурацию Bash...${NC}"
-    export PATH=$PATH:/root/gaianet/bin
-
+    source ~/.bashrc
+    
     echo -e "${BLUE}Инициализируем GaiaNet с конфигурацией...${NC}"
-    /root/gaianet/bin/gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
+    gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
+
+    gaianet start
+
+    sleep 60
+
+    gianet stop
 
     echo -e "${BLUE}Создаем сервисный файл для автоматического перезапуска ноды...${NC}"
     cat <<EOF | sudo tee /etc/systemd/system/gaianet.service
 [Unit]
 Description=Gaianet Node Service
 After=network.target
-
 [Service]
 Type=forking
 RemainAfterExit=true
@@ -56,13 +61,11 @@ ExecStopPost=/bin/sleep 20
 Restart=always
 RestartSec=5
 User=root
-
 [Install]
 WantedBy=multi-user.target
 EOF
-    gaianet stop
+
     sudo systemctl daemon-reload
-    sudo systemctl enable gaianet.service
     sudo systemctl restart gaianet.service
     echo -e "${GREEN}Нода Gaianet и сервис для автоматического перезапуска ноды успешно установлены и запущены.${NC}"
 
@@ -71,27 +74,7 @@ EOF
 }
 
 function view_logs {
-    echo -e "${YELLOW}Проверяем существование файла логов ноды...${NC}"
-    
-    # Проверяем текущую директорию
-    if [ -f gaianet_node.log ]; then
-        echo -e "${YELLOW}Просмотр логов ноды (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
-        tail -n 50 gaianet_node.log
-    # Проверяем в /root/gaianet (предполагаемый путь)
-    elif [ -f /root/gaianet/gaianet_node.log ]; then
-        echo -e "${YELLOW}Логи найдены в /root/gaianet/gaianet_node.log. Просмотр (последние 50 строк, выход: Ctrl+C)...${NC}"
-        tail -n 50 /root/gaianet/gaianet_node.log
-    # Проверяем в /var/log (альтернативный возможный путь)
-    elif [ -f /var/log/gaianet_node.log ]; then
-        echo -e "${YELLOW}Логи найдены в /var/log/gaianet_node.log. Просмотр (последние 50 строк, выход: Ctrl+C)...${NC}"
-        tail -n 50 /var/log/gaianet_node.log
-    else
-        echo -e "${RED}Файл логов ноды (gaianet_node.log) не найден ни в текущей директории, ни в /root/gaianet/, ни в /var/log/.${NC}"
-        echo -e "${YELLOW}Проверьте, где нода записывает свои логи, или убедитесь, что нода запущена.${NC}"
-        echo -e "${YELLOW}Попробуйте вручную найти файл с помощью: sudo find / -name \"gaianet_node.log\" 2>/dev/null${NC}"
-        echo -e "${YELLOW}Если нода не запущена, попробуйте перезапустить её: /root/gaianet/bin/gaianet start${NC}"
-    fi
-    echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
+    journalctl -u gaianet.service -f
 }
 
 function view_ai_chat_logs {
@@ -161,7 +144,7 @@ function change_port {
 }
 
 function setup_ai_chat_automation {
-    echo -e "${YELLOW}Введите ваш Subdomain (например: 0xb37b848a654d75e6e6a816098bbdb74664e82eaa.us.gaianet.network):${NC}"
+    echo -e "${YELLOW}Введите ваш Subdomain (например: 0xb37b848a654d75e6e6a816098bbdb74664e82eaa.gaia.domains):${NC}"
     read subdomain
     echo -e "${BLUE}Устанавливаем скрипт для автоматизации общения с AI ботом...${NC}"
     pip install requests
