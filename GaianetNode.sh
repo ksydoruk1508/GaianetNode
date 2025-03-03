@@ -193,7 +193,7 @@ function check_node_status {
 
 function view_logs {
     echo -e "${BLUE}Показываем последние 100 строк логов сервиса Gaianet...${NC}"
-    journalctl -u gaianet.service -n 100 | less -FX
+    journalctl -u gaianet.service -n 100
     echo -e "${BLUE}Просмотр логов завершен. Возвращаемся в главное меню...${NC}"
     main_menu
 }
