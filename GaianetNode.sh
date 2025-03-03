@@ -70,9 +70,6 @@ EOF
     sudo systemctl daemon-reload
     sudo systemctl restart gaianet.service
 
-    echo -e "${BLUE}Проверяем статус сервиса...${NC}"
-    sudo systemctl status gaianet.service
-
     echo -e "${GREEN}Установка ноды GaiaNet завершена успешно!${NC}"
 }
 
