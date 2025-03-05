@@ -22,13 +22,6 @@ fi
 
 sleep 1
 
-# Проверка наличия curl и установка, если не установлен
-if ! command -v curl &> /dev/null; then
-    sudo apt update
-    sudo apt install curl -y
-fi
-sleep 1
-
 echo -e "${GREEN}"
 cat << "EOF"
  ██████   █████  ██  █████  ███    ██ ███████ ████████ 
