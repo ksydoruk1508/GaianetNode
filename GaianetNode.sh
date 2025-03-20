@@ -178,6 +178,25 @@ EOF
     echo -e "${GREEN}Скрипт для автоматизации общения с AI ботом успешно установлен и запущен в фоновом режиме.${NC}"
 }
 
+function restart_ai_chat_script {
+    echo -e "${BLUE}Перезапускаем скрипт для общения с AI ботом...${NC}"
+
+    # Останавливаем текущий процесс, если он запущен
+    echo -e "${BLUE}Останавливаем текущий процесс random_chat_with_faker.py...${NC}"
+    pkill -f "python3 ~/random_chat_with_faker.py"
+    sleep 2  # Даём время на завершение процесса
+
+    # Проверяем, существует ли скрипт
+    if [ -f ~/random_chat_with_faker.py ]; then
+        echo -e "${BLUE}Запускаем скрипт random_chat_with_faker.py в фоновом режиме...${NC}"
+        nohup python3 ~/random_chat_with_faker.py > ~/random_chat_with_faker.log 2>&1 &
+        echo -e "${GREEN}Скрипт для общения с AI ботом успешно перезапущен!${NC}"
+    else
+        echo -e "${RED}Файл ~/random_chat_with_faker.py не найден!${NC}"
+        echo -e "${YELLOW}Сначала установите скрипт для автоматизации общения с AI ботом (пункт 2).${NC}"
+    fi
+}
+
 function check_node_status {
     echo -e "${BLUE}Проверяем статус ноды Gaianet...${NC}"
     sudo systemctl status gaianet.service
@@ -213,7 +232,7 @@ function view_node_info {
 
 function restart_node {
     echo -e "${BLUE}Перезапускаем ноду Gaianet...${NC}"
-    gainet stop
+    gaianet stop
     sudo systemctl daemon-reload
     sudo systemctl restart gaianet.service
     echo -e "${GREEN}Нода Gaianet успешно перезапущена.${NC}"
@@ -258,28 +277,30 @@ function main_menu {
         echo -e "${YELLOW}Выберите действие:${NC}"
         echo -e "${CYAN}1. Установка ноды${NC}"
         echo -e "${CYAN}2. Установить скрипт для автоматизации общения с AI ботом${NC}"
-        echo -e "${CYAN}3. Проверить статус ноды${NC}"
-        echo -e "${CYAN}4. Просмотр логов${NC}"
-        echo -e "${CYAN}5. Просмотр логов общения с AI ботом${NC}"
-        echo -e "${CYAN}6. Просмотр Node id и Device id${NC}"
-        echo -e "${CYAN}7. Перезапуск ноды${NC}"
-        echo -e "${CYAN}8. Обновить ноду${NC}"
-        echo -e "${CYAN}9. Удаление ноды${NC}"
-        echo -e "${CYAN}10. Выход${NC}"
+        echo -e "${CYAN}3. Перезапуск скрипта на общение с ИИ${NC}"
+        echo -e "${CYAN}4. Проверить статус ноды${NC}"
+        echo -e "${CYAN}5. Просмотр логов${NC}"
+        echo -e "${CYAN}6. Просмотр логов общения с AI ботом${NC}"
+        echo -e "${CYAN}7. Просмотр Node id и Device id${NC}"
+        echo -e "${CYAN}8. Перезапуск ноды${NC}"
+        echo -e "${CYAN}9. Обновить ноду${NC}"
+        echo -e "${CYAN}10. Удаление ноды${NC}"
+        echo -e "${CYAN}11. Выход${NC}"
         
         echo -e "${YELLOW}Введите номер:${NC} "
         read choice
         case $choice in
             1) install_node ;;
             2) setup_ai_chat_automation ;;
-            3) check_node_status ;;
-            4) view_logs ;;
-            5) view_ai_chat_logs ;;
-            6) view_node_info ;;
-            7) restart_node ;;
-            8) update_node ;;
-            9) remove_node ;;
-            10) break ;;
+            3) restart_ai_chat_script ;;
+            4) check_node_status ;;
+            5) view_logs ;;
+            6) view_ai_chat_logs ;;
+            7) view_node_info ;;
+            8) restart_node ;;
+            9) update_node ;;
+            10) remove_node ;;
+            11) break ;;
             *) echo -e "${RED}Неверный выбор, попробуйте снова.${NC}" ;;
         esac
     done
