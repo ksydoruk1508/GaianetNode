@@ -73,29 +73,6 @@ function install_node {
     echo -e "${BLUE}Запускаем ноду...${NC}"
     gaianet start
 
-    echo -e "${BLUE}Создаем сервисный файл для автозапуска GaiaNet при падении...${NC}"
-    cat <<EOF | sudo tee /etc/systemd/system/gaianet.service
-[Unit]
-Description=Gaianet Node Service
-After=network.target
-[Service]
-Type=forking
-RemainAfterExit=true
-Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/gaianet/bin"
-ExecStart=/root/gaianet/bin/gaianet start
-ExecStop=/root/gaianet/bin/gaianet stop
-ExecStopPost=/bin/sleep 20
-Restart=always
-RestartSec=5
-User=root
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    echo -e "${BLUE}Перезагружаем конфигурацию systemd и рестартуем сервис...${NC}"
-    sudo systemctl daemon-reload
-    sudo systemctl restart gaianet.service
-
     echo -e "${GREEN}Установка ноды GaiaNet завершена успешно!${NC}"
 }
 
