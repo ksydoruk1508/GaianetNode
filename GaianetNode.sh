@@ -67,17 +67,32 @@ function install_node {
     export PATH=$PATH:/root/gaianet/bin
     echo "Текущий PATH: $PATH"
 
+    # Добавляем путь /root/gaianet/bin в ~/.bashrc, если он ещё не добавлен
+    if ! grep -q '/root/gaianet/bin' ~/.bashrc; then
+        echo 'export PATH=$PATH:/root/gaianet/bin' >> ~/.bashrc
+        echo -e "${GREEN}Путь /root/gaianet/bin добавлен в ~/.bashrc${NC}"
+    fi
+
+    # Добавляем source /root/.wasmedge/env в ~/.bashrc, если он существует и ещё не добавлен
+    if [ -f /root/.wasmedge/env ] && ! grep -q 'source /root/.wasmedge/env' ~/.bashrc; then
+        echo 'source /root/.wasmedge/env' >> ~/.bashrc
+        echo -e "${GREEN}source /root/.wasmedge/env добавлен в ~/.bashrc${NC}"
+    fi
+
+    # Применяем изменения в текущей сессии
+    source ~/.bashrc
+
     echo -e "${BLUE}Инициализируем GaiaNet с конфигурацией...${NC}"
     gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
     if [ $? -ne 0 ]; then
-        echo -e "${RED}Ошибка при инициализации GaiaNet! Проверьте логи в /root/gaianet/log${NC}"
+        echo -e "${RED}Ошибка при инициализации GaiaNet!${NC}"
         exit 1
     fi
 
     echo -e "${BLUE}Запускаем ноду...${NC}"
     gaianet start
     if [ $? -ne 0 ]; then
-        echo -e "${RED}Ошибка при запуске ноды! Проверьте логи: cat /root/gaianet/log/start-llamaedge.log${NC}"
+        echo -e "${RED}Ошибка при запуске ноды! Проверьте логи: /root/gaianet/log/start-llamaedge.log${NC}"
         exit 1
     fi
 
@@ -170,7 +185,6 @@ EOF
         echo -e "${GREEN}Скрипт успешно запущен в фоновом режиме.${NC}"
     else
         echo -e "${RED}Ошибка при запуске скрипта!${NC}"
-        return
     fi
 
     echo -e "${GREEN}Скрипт для автоматизации общения с AI ботом успешно установлен и запущен в фоновом режиме.${NC}"
@@ -179,17 +193,19 @@ EOF
 function restart_ai_chat_script {
     echo -e "${BLUE}Перезапускаем скрипт для общения с AI ботом...${NC}"
 
+    # Останавливаем текущий процесс, если он запущен
     echo -e "${BLUE}Останавливаем текущий процесс random_chat_with_faker.py...${NC}"
     pkill -f "python3 ~/random_chat_with_faker.py"
-    sleep 2
+    sleep 2  # Даём время на завершение процесса
 
+    # Проверяем, существует ли скрипт
     if [ -f ~/random_chat_with_faker.py ]; then
         echo -e "${BLUE}Запускаем скрипт random_chat_with_faker.py в фоновом режиме...${NC}"
         nohup python3 ~/random_chat_with_faker.py > ~/random_chat_with_faker.log 2>&1 &
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}Скрипт для общения с AI ботом успешно перезапущен!${NC}"
         else
-            echo -e "${RED}Ошибка при перезапуске скрипта!${NC}"
+            echo -e "${RED}Ошибка при запуске скрипта!${NC}"
         fi
     else
         echo -e "${RED}Файл ~/random_chat_with_faker.py не найден!${NC}"
@@ -200,7 +216,7 @@ function restart_ai_chat_script {
 function check_node_status {
     echo -e "${BLUE}Проверяем статус ноды Gaianet...${NC}"
     if pgrep -f "wasmedge.*llama-api-server.wasm" > /dev/null; then
-        echo -e "${GREEN}Нода Gaianet запущена.${NC}"
+        echo -e "${GREEN}Нода Gaianet активна.${NC}"
     else
         echo -e "${RED}Нода Gaianet не запущена.${NC}"
     fi
@@ -208,7 +224,7 @@ function check_node_status {
 }
 
 function view_logs {
-    echo -e "${BLUE}Показываем последние 100 строк логов Gaianet...${NC}"
+    echo -e "${BLUE}Показываем логи ноды Gaianet...${NC}"
     if [ -f /root/gaianet/log/start-llamaedge.log ]; then
         tail -n 100 /root/gaianet/log/start-llamaedge.log
     else
@@ -220,6 +236,7 @@ function view_logs {
 
 function view_ai_chat_logs {
     echo -e "${YELLOW}Проверяем существование файла логов общения с AI ботом...${NC}"
+    
     if [ -f ~/chat_log.txt ]; then
         echo -e "${YELLOW}Просмотр логов общения с AI ботом (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
         tail -n 50 ~/chat_log.txt
@@ -232,20 +249,24 @@ function view_ai_chat_logs {
 }
 
 function view_node_info {
-    echo -e "${YELLOW}Просмотр Node id и Device id...${NC}"
-    /root/gaianet/bin/gaianet info
+    echo -e "${YELLOW}Просмотр Node ID и Device ID...${NC}"
+    if [ -f /root/gaianet/bin/gaianet ]; then
+        /root/gaianet/bin/gaianet info
+    else
+        echo -e "${RED}Команда gaianet не найдена! Убедитесь, что нода установлена.${NC}"
+    fi
     echo -e "${BLUE}Возвращаемся в главное меню...${NC}"
 }
 
 function restart_node {
     echo -e "${BLUE}Перезапускаем ноду Gaianet...${NC}"
-    gaianet stop
+    /root/gaianet/bin/gaianet stop
     if [ $? -ne 0 ]; then
         echo -e "${RED}Ошибка при остановке ноды!${NC}"
     fi
-    gaianet start
+    /root/gaianet/bin/gaianet start
     if [ $? -ne 0 ]; then
-        echo -e "${RED}Ошибка при запуске ноды! Проверьте логи: cat /root/gaianet/log/start-llamaedge.log${NC}"
+        echo -e "${RED}Ошибка при запуске ноды! Проверьте логи: /root/gaianet/log/start-llamaedge.log${NC}"
     else
         echo -e "${GREEN}Нода Gaianet успешно перезапущена.${NC}"
     fi
@@ -253,7 +274,7 @@ function restart_node {
 
 function update_node {
     echo -e "${BLUE}Обновляем ноду...${NC}"
-    gaianet stop
+    /root/gaianet/bin/gaianet stop
     curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' -o install.sh
     if [ $? -eq 0 ]; then
         bash install.sh
@@ -262,9 +283,9 @@ function update_node {
         exit 1
     fi
     export PATH=$PATH:/root/gaianet/bin
-    gaianet start
+    /root/gaianet/bin/gaianet start
     if [ $? -ne 0 ]; then
-        echo -e "${RED}Ошибка при запуске ноды! Проверьте логи: cat /root/gaianet/log/start-llamaedge.log${NC}"
+        echo -e "${RED}Ошибка при запуске ноды! Проверьте логи: /root/gaianet/log/start-llamaedge.log${NC}"
     else
         echo -e "${GREEN}Нода Gaianet успешно обновлена.${NC}"
     fi
@@ -272,7 +293,7 @@ function update_node {
 
 function remove_node {
     echo -e "${BLUE}Останавливаем ноду Gaianet...${NC}"
-    gaianet stop
+    /root/gaianet/bin/gaianet stop
     if [ $? -ne 0 ]; then
         echo -e "${RED}Ошибка при остановке ноды!${NC}"
     fi
@@ -289,6 +310,16 @@ function remove_node {
     pkill -f "python3 ~/random_chat_with_faker.py"
     rm -f ~/random_chat_with_faker.py ~/chat_log.txt ~/random_chat_with_faker.log
     echo -e "${GREEN}Скрипт для автоматизации общения с AI ботом и его логи успешно удалены.${NC}"
+
+    # Удаляем строки из ~/.bashrc
+    if grep -q '/root/gaianet/bin' ~/.bashrc; then
+        sed -i '/export PATH=$PATH:\/root\/gaianet\/bin/d' ~/.bashrc
+        echo -e "${GREEN}Путь /root/gaianet/bin удален из ~/.bashrc${NC}"
+    fi
+    if grep -q 'source /root/.wasmedge/env' ~/.bashrc; then
+        sed -i '/source \/root\/.wasmedge\/env/d' ~/.bashrc
+        echo -e "${GREEN}source /root/.wasmedge/env удален из ~/.bashrc${NC}"
+    fi
 }
 
 function main_menu {
@@ -300,7 +331,7 @@ function main_menu {
         echo -e "${CYAN}4. Проверить статус ноды${NC}"
         echo -e "${CYAN}5. Просмотр логов${NC}"
         echo -e "${CYAN}6. Просмотр логов общения с AI ботом${NC}"
-        echo -e "${CYAN}7. Просмотр Node id и Device id${NC}"
+        echo -e "${CYAN}7. Просмотр Node ID и Device ID${NC}"
         echo -e "${CYAN}8. Перезапуск ноды${NC}"
         echo -e "${CYAN}9. Обновить ноду${NC}"
         echo -e "${CYAN}10. Удаление ноды${NC}"
