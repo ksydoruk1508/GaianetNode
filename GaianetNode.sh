@@ -53,22 +53,25 @@ echo -e "${NC}"
 function install_node {
     echo -e "${BLUE}Обновляем и устанавливаем необходимые пакеты...${NC}"
     sudo apt update -y
-    sudo apt-get update
 
     echo -e "${BLUE}Загружаем и выполняем последнюю версию скрипта установки GaiaNet Node...${NC}"
-    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash
+    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' -o install.sh
+    if [ $? -eq 0 ]; then
+        bash install.sh
+    else
+        echo -e "${RED}Ошибка при загрузке скрипта установки!${NC}"
+        exit 1
+    fi
 
-    echo -e "${BLUE}Выбираем конфигурацию Bash...${NC}"
-    source ~/.bashrc
-    
+    echo -e "${BLUE}Обновляем переменные окружения...${NC}"
+    export PATH=$PATH:/root/gaianet/bin
+    echo "Текущий PATH: $PATH"
+
     echo -e "${BLUE}Инициализируем GaiaNet с конфигурацией...${NC}"
     gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
 
     echo -e "${BLUE}Запускаем ноду...${NC}"
     gaianet start
-
-    echo -e "${BLUE}Останавливаем ноду...${NC}"
-    gaianet stop
 
     echo -e "${BLUE}Создаем сервисный файл для автозапуска GaiaNet при падении...${NC}"
     cat <<EOF | sudo tee /etc/systemd/system/gaianet.service
@@ -78,6 +81,7 @@ After=network.target
 [Service]
 Type=forking
 RemainAfterExit=true
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/gaianet/bin"
 ExecStart=/root/gaianet/bin/gaianet start
 ExecStop=/root/gaianet/bin/gaianet stop
 ExecStopPost=/bin/sleep 20
