@@ -69,9 +69,17 @@ function install_node {
 
     echo -e "${BLUE}Инициализируем GaiaNet с конфигурацией...${NC}"
     gaianet init --config https://raw.githubusercontent.com/GaiaNet-AI/node-configs/main/qwen2-0.5b-instruct/config.json
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Ошибка при инициализации GaiaNet! Проверьте логи в /root/gaianet/log${NC}"
+        exit 1
+    fi
 
     echo -e "${BLUE}Запускаем ноду...${NC}"
     gaianet start
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Ошибка при запуске ноды! Проверьте логи: cat /root/gaianet/log/start-llamaedge.log${NC}"
+        exit 1
+    fi
 
     echo -e "${GREEN}Установка ноды GaiaNet завершена успешно!${NC}"
 }
@@ -80,17 +88,20 @@ function setup_ai_chat_automation {
     echo -e "${YELLOW}Введите ваш адрес. Например: 0xb37b848a654d75e6e6a816098bbdb74664e82eaa.gaia.domains${NC}"
     read wallet_address
 
+    # Проверка формата адреса
+    if [[ ! $wallet_address =~ ^0x[a-fA-F0-9]{40}\.gaia\.domains$ ]]; then
+        echo -e "${RED}Неверный формат адреса!${NC}"
+        return
+    fi
+
     echo -e "${BLUE}Обновляем и устанавливаем необходимые пакеты...${NC}"
     sudo apt update -y
-    sudo apt update
 
     echo -e "${BLUE}Устанавливаем Python, редактор nano и необходимые утилиты...${NC}"
-    sudo apt install python3-pip -y
-    sudo apt install nano -y
+    sudo apt install python3-pip nano -y
 
     echo -e "${BLUE}Устанавливаем нужные библиотеки...${NC}"
-    pip install requests
-    pip install faker
+    pip3 install requests faker
 
     echo -e "${BLUE}Создаем скрипт random_chat_with_faker.py...${NC}"
     cat <<EOF > ~/random_chat_with_faker.py
@@ -155,6 +166,12 @@ EOF
 
     echo -e "${BLUE}Запускаем скрипт random_chat_with_faker.py в фоновом режиме с помощью nohup...${NC}"
     nohup python3 ~/random_chat_with_faker.py > ~/random_chat_with_faker.log 2>&1 &
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Скрипт успешно запущен в фоновом режиме.${NC}"
+    else
+        echo -e "${RED}Ошибка при запуске скрипта!${NC}"
+        return
+    fi
 
     echo -e "${GREEN}Скрипт для автоматизации общения с AI ботом успешно установлен и запущен в фоновом режиме.${NC}"
 }
@@ -162,16 +179,18 @@ EOF
 function restart_ai_chat_script {
     echo -e "${BLUE}Перезапускаем скрипт для общения с AI ботом...${NC}"
 
-    # Останавливаем текущий процесс, если он запущен
     echo -e "${BLUE}Останавливаем текущий процесс random_chat_with_faker.py...${NC}"
     pkill -f "python3 ~/random_chat_with_faker.py"
-    sleep 2  # Даём время на завершение процесса
+    sleep 2
 
-    # Проверяем, существует ли скрипт
     if [ -f ~/random_chat_with_faker.py ]; then
         echo -e "${BLUE}Запускаем скрипт random_chat_with_faker.py в фоновом режиме...${NC}"
         nohup python3 ~/random_chat_with_faker.py > ~/random_chat_with_faker.log 2>&1 &
-        echo -e "${GREEN}Скрипт для общения с AI ботом успешно перезапущен!${NC}"
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}Скрипт для общения с AI ботом успешно перезапущен!${NC}"
+        else
+            echo -e "${RED}Ошибка при перезапуске скрипта!${NC}"
+        fi
     else
         echo -e "${RED}Файл ~/random_chat_with_faker.py не найден!${NC}"
         echo -e "${YELLOW}Сначала установите скрипт для автоматизации общения с AI ботом (пункт 2).${NC}"
@@ -180,20 +199,27 @@ function restart_ai_chat_script {
 
 function check_node_status {
     echo -e "${BLUE}Проверяем статус ноды Gaianet...${NC}"
-    sudo systemctl status gaianet.service
+    if pgrep -f "wasmedge.*llama-api-server.wasm" > /dev/null; then
+        echo -e "${GREEN}Нода Gaianet запущена.${NC}"
+    else
+        echo -e "${RED}Нода Gaianet не запущена.${NC}"
+    fi
     echo -e "${BLUE}Проверка завершена.${NC}"
 }
 
 function view_logs {
-    echo -e "${BLUE}Показываем последние 100 строк логов сервиса Gaianet...${NC}"
-    journalctl -u gaianet.service -n 100
+    echo -e "${BLUE}Показываем последние 100 строк логов Gaianet...${NC}"
+    if [ -f /root/gaianet/log/start-llamaedge.log ]; then
+        tail -n 100 /root/gaianet/log/start-llamaedge.log
+    else
+        echo -e "${RED}Файл логов /root/gaianet/log/start-llamaedge.log не найден!${NC}"
+    fi
     echo -e "${BLUE}Просмотр логов завершен. Возвращаемся в главное меню...${NC}"
     main_menu
 }
 
 function view_ai_chat_logs {
     echo -e "${YELLOW}Проверяем существование файла логов общения с AI ботом...${NC}"
-    
     if [ -f ~/chat_log.txt ]; then
         echo -e "${YELLOW}Просмотр логов общения с AI ботом (последние 50 строк, выход из режима просмотра: Ctrl+C)...${NC}"
         tail -n 50 ~/chat_log.txt
@@ -214,37 +240,49 @@ function view_node_info {
 function restart_node {
     echo -e "${BLUE}Перезапускаем ноду Gaianet...${NC}"
     gaianet stop
-    sudo systemctl daemon-reload
-    sudo systemctl restart gaianet.service
-    echo -e "${GREEN}Нода Gaianet успешно перезапущена.${NC}"
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Ошибка при остановке ноды!${NC}"
+    fi
+    gaianet start
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Ошибка при запуске ноды! Проверьте логи: cat /root/gaianet/log/start-llamaedge.log${NC}"
+    else
+        echo -e "${GREEN}Нода Gaianet успешно перезапущена.${NC}"
+    fi
 }
 
 function update_node {
     echo -e "${BLUE}Обновляем ноду...${NC}"
     gaianet stop
-    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' | bash
-    source $HOME/.bashrc
+    curl -sSfL 'https://github.com/GaiaNet-AI/gaianet-node/releases/latest/download/install.sh' -o install.sh
+    if [ $? -eq 0 ]; then
+        bash install.sh
+    else
+        echo -e "${RED}Ошибка при загрузке скрипта установки!${NC}"
+        exit 1
+    fi
+    export PATH=$PATH:/root/gaianet/bin
     gaianet start
-    echo -e "${GREEN}Нода Gaianet успешно обновлена.${NC}"
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Ошибка при запуске ноды! Проверьте логи: cat /root/gaianet/log/start-llamaedge.log${NC}"
+    else
+        echo -e "${GREEN}Нода Gaianet успешно обновлена.${NC}"
+    fi
 }
 
 function remove_node {
-    echo -e "${BLUE}Останавливаем и удаляем сервис Gaianet...${NC}"
+    echo -e "${BLUE}Останавливаем ноду Gaianet...${NC}"
     gaianet stop
-    sudo systemctl stop gaianet.service
-    sudo systemctl disable gaianet.service
-    sudo rm -f /etc/systemd/system/gaianet.service
-    sudo systemctl daemon-reload
-    echo -e "${GREEN}Сервис Gaianet успешно остановлен и удален.${NC}"
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Ошибка при остановке ноды!${NC}"
+    fi
 
     echo -e "${BLUE}Удаляем ноду Gaianet...${NC}"
     sudo rm -rf /root/gaianet
     echo -e "${GREEN}Нода Gaianet успешно удалена.${NC}"
 
     echo -e "${BLUE}Удаляем WasmEdge...${NC}"
-    sudo rm -rf /usr/local/include/wasmedge
-    sudo rm -f /usr/local/lib/libwasmedge*
-    sudo rm -f /usr/local/bin/wasmedge*
+    sudo rm -rf /root/.wasmedge
     echo -e "${GREEN}WasmEdge успешно удален.${NC}"
 
     echo -e "${BLUE}Удаляем скрипт для автоматизации общения с AI ботом...${NC}"
